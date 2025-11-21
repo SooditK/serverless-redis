@@ -14,8 +14,6 @@ RUN cargo build --release --bin serverless-redis
 
 FROM gcr.io/distroless/cc-debian12:nonroot
 COPY --from=builder /app/target/release/serverless-redis /usr/local/bin/serverless-redis
-ENV PORT=3000
-EXPOSE 3000
 USER nonroot:nonroot
 
 CMD ["/usr/local/bin/serverless-redis"]
