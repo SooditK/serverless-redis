@@ -1,0 +1,15 @@
+{
+  "name": "serverless-redis-tests",
+  "version": "1.0.0",
+  "description": "Compatibility tests for serverless-redis",
+  "main": "index.js",
+  "scripts": {
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.3"
+  },
+  "devDependencies": {
+    "bun-types": "latest"
+  }
+}

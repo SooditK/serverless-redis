@@ -32,6 +32,9 @@ jobs:
         with:
           components: clippy, rustfmt
 
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
@@ -46,3 +49,32 @@ jobs:
         env:
           REDIS_URL: redis://localhost:6379
 
+      - name: Build serverless-redis
+        run: cargo build --release
+
+      - name: Start serverless-redis server
+        run: |
+          ./target/release/serverless-redis &
+          echo $! > server.pid
+          sleep 2
+        env:
+          REDIS_URL: redis://localhost:6379
+          SR_TOKEN: test-token
+          PORT: 3000
+
+      - name: Install Upstash dependencies
+        run: cd tests/upstash && bun install
+
+      - name: Run Upstash tests
+        run: cd tests/upstash && bun test
+        env:
+          SR_TOKEN: test-token
+          SR_URL: http://localhost:3000
+
+      - name: Stop serverless-redis server
+        if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
