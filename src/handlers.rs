@@ -30,22 +30,27 @@ pub async fn post_root(
 
     let mut cmd = Vec::with_capacity(arr.unwrap().len());
     for v in arr.unwrap() {
-        if let Some(s) = v.as_str() {
-            cmd.push(s.to_string());
-        } else {
-            return write_resp(
-                EnvResp {
-                    status: "malformed_data".into(),
-                    result: None,
-                    result_list: None,
-                    error: Some(
-                        "Invalid command array. Expected a string array at root of the command and its arguments.".into(),
-                    ),
-                    message: None,
-                },
-                enc,
-            );
-        }
+        let arg = match v {
+            serde_json::Value::String(s) => s.clone(),
+            serde_json::Value::Number(n) => n.to_string(),
+            serde_json::Value::Bool(b) => b.to_string(),
+            serde_json::Value::Null => "".to_string(),
+            _ => {
+                return write_resp(
+                    EnvResp {
+                        status: "malformed_data".into(),
+                        result: None,
+                        result_list: None,
+                        error: Some(
+                            "Invalid command array. Expected strings, numbers, or booleans.".into(),
+                        ),
+                        message: None,
+                    },
+                    enc,
+                );
+            }
+        };
+        cmd.push(arg);
     }
 
     let mut conn = state.conn.clone();
@@ -117,23 +122,28 @@ pub async fn post_pipeline(
         }
         let mut cmd = Vec::with_capacity(arr.unwrap().len());
         for v in arr.unwrap() {
-            if let Some(s) = v.as_str() {
-                cmd.push(s.to_string());
-            } else {
-                return write_resp(
-                    EnvResp {
-                        status: "malformed_data".into(),
-                        result: None,
-                        result_list: None,
-                        error: Some(
-                            "Invalid command array. Expected an array of string arrays at root."
-                                .into(),
-                        ),
-                        message: None,
-                    },
-                    enc,
-                );
-            }
+            let arg = match v {
+                serde_json::Value::String(s) => s.clone(),
+                serde_json::Value::Number(n) => n.to_string(),
+                serde_json::Value::Bool(b) => b.to_string(),
+                serde_json::Value::Null => "".to_string(),
+                _ => {
+                    return write_resp(
+                        EnvResp {
+                            status: "malformed_data".into(),
+                            result: None,
+                            result_list: None,
+                            error: Some(
+                                "Invalid command array. Expected strings, numbers, or booleans."
+                                    .into(),
+                            ),
+                            message: None,
+                        },
+                        enc,
+                    );
+                }
+            };
+            cmd.push(arg);
         }
         cmds.push(cmd);
     }
