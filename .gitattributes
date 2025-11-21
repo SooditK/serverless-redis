@@ -1,0 +1,3 @@
+# Mark TypeScript test files as vendored to exclude from language statistics as its mislabeling the project as a TypeScript project
+tests/upstash/** linguist-vendored
+
