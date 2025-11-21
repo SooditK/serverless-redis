@@ -17,6 +17,8 @@ HTTP server for Redis with Upstash compatibility.
 
 ## Quick Start
 
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/8y27Xe?referralCode=uab9EQ&utm_medium=integration&utm_source=template&utm_campaign=generic)
+
 ### Using Docker Compose
 
 ```bash
