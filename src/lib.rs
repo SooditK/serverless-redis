@@ -1,9 +1,10 @@
 pub mod handlers;
 pub mod models;
+pub mod pubsub;
 pub mod redis_client;
 pub mod utils;
 
-use crate::handlers::{post_multi_exec, post_pipeline, post_root};
+use crate::handlers::{get_psubscribe, get_subscribe, post_multi_exec, post_pipeline, post_root};
 use crate::models::{AppState, EnvResp};
 use crate::utils::write_resp;
 use axum::{
@@ -36,6 +37,11 @@ pub fn create_app(state: AppState, token: String) -> Router {
         )
         .route("/pipeline", post(post_pipeline))
         .route("/multi-exec", post(post_multi_exec))
+        .route("/subscribe/*channels", get(get_subscribe).post(get_subscribe))
+        .route(
+            "/psubscribe/*patterns",
+            get(get_psubscribe).post(get_psubscribe),
+        )
         .with_state(state)
         .layer(ValidateRequestHeaderLayer::bearer(&token))
 }

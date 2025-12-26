@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone)]
 pub struct AppState {
     pub conn: ConnectionManager,
+    pub redis_url: String,
 }
 
 #[derive(Serialize, Deserialize)]

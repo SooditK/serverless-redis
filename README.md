@@ -12,12 +12,11 @@ HTTP server for Redis with Upstash compatibility.
 
 - High performance with Rust and Axum
 - Compatible with Upstash Redis HTTP API
+- Pub/Sub support with Server-Sent Events (SSE)
 - Easy deployment with Docker
 - Bearer token authentication support
 
 ## Quick Start
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/serverless-redis?referralCode=uab9EQ&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
 ### Using Docker Compose
 
@@ -57,6 +56,12 @@ curl -H "Authorization: Bearer your_token_here" http://localhost:3000/...
 ## API Compatibility
 
 This server implements the Upstash Redis HTTP API, allowing you to use Upstash client libraries with your own Redis instance.
+
+### Supported Features
+
+- All standard Redis commands (strings, lists, sets, hashes, etc.)
+- Pub/Sub with `SUBSCRIBE` and `PSUBSCRIBE` via SSE
+- Pipeline and multi-exec support
 
 ## License
 

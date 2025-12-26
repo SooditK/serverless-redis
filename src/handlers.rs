@@ -186,3 +186,169 @@ pub async fn post_multi_exec(
 ) -> Response {
     post_pipeline(state, headers, body).await
 }
+
+use crate::pubsub::{
+    create_pubsub_connection, format_sse_message, parse_redis_message, subscribe_to_channels,
+    psubscribe_to_patterns, PubSubMessage,
+};
+use axum::{
+    extract::Path,
+    response::sse::{Event, KeepAlive, Sse},
+};
+use futures::stream::Stream;
+use std::convert::Infallible;
+use tokio_stream::StreamExt;
+
+pub async fn get_subscribe(
+    State(state): State<AppState>,
+    Path(channels): Path<String>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+    // Parse channels from path - they come as a comma-separated or slash-separated string
+    let channel_list: Vec<String> = channels
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect();
+
+    if channel_list.is_empty() {
+        return Err(write_resp(
+            EnvResp {
+                status: "malformed_data".into(),
+                result: None,
+                result_list: None,
+                error: Some("No channels specified".into()),
+                message: None,
+            },
+            false,
+        ));
+    }
+
+    // Create a dedicated Pub/Sub connection
+    let mut pubsub = match create_pubsub_connection(&state.redis_url).await {
+        Ok(ps) => ps,
+        Err(e) => {
+            return Err(write_resp(
+                EnvResp {
+                    status: "connection_error".into(),
+                    result: None,
+                    result_list: None,
+                    error: Some(format!("Failed to create pubsub connection: {}", e)),
+                    message: None,
+                },
+                false,
+            ));
+        }
+    };
+
+    // Subscribe to channels
+    let count = match subscribe_to_channels(&mut pubsub, &channel_list).await {
+        Ok(c) => c,
+        Err(e) => {
+            return Err(write_resp(
+                EnvResp {
+                    status: "error".into(),
+                    result: None,
+                    result_list: None,
+                    error: Some(format!("Failed to subscribe: {}", e)),
+                    message: None,
+                },
+                false,
+            ));
+        }
+    };
+
+    // Create the SSE stream
+    let stream = async_stream::stream! {
+        // Send initial subscribe event
+        let subscribe_msg = PubSubMessage::Subscribe { count };
+        yield Ok(Event::default().data(format_sse_message(&subscribe_msg)));
+
+        // Stream messages
+        let mut message_stream = pubsub.on_message();
+        while let Some(msg) = message_stream.next().await {
+            if let Some(parsed) = parse_redis_message(&msg) {
+                let sse_data = format_sse_message(&parsed);
+                yield Ok(Event::default().data(sse_data));
+            }
+        }
+    };
+
+    Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
+}
+
+pub async fn get_psubscribe(
+    State(state): State<AppState>,
+    Path(patterns): Path<String>,
+) -> Result<Sse<impl Stream<Item = Result<Event, Infallible>>>, Response> {
+    // Parse patterns from path
+    let pattern_list: Vec<String> = patterns
+        .split('/')
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string())
+        .collect();
+
+    if pattern_list.is_empty() {
+        return Err(write_resp(
+            EnvResp {
+                status: "malformed_data".into(),
+                result: None,
+                result_list: None,
+                error: Some("No patterns specified".into()),
+                message: None,
+            },
+            false,
+        ));
+    }
+
+    // Create a dedicated Pub/Sub connection
+    let mut pubsub = match create_pubsub_connection(&state.redis_url).await {
+        Ok(ps) => ps,
+        Err(e) => {
+            return Err(write_resp(
+                EnvResp {
+                    status: "connection_error".into(),
+                    result: None,
+                    result_list: None,
+                    error: Some(format!("Failed to create pubsub connection: {}", e)),
+                    message: None,
+                },
+                false,
+            ));
+        }
+    };
+
+    // Subscribe to patterns
+    let count = match psubscribe_to_patterns(&mut pubsub, &pattern_list).await {
+        Ok(c) => c,
+        Err(e) => {
+            return Err(write_resp(
+                EnvResp {
+                    status: "error".into(),
+                    result: None,
+                    result_list: None,
+                    error: Some(format!("Failed to psubscribe: {}", e)),
+                    message: None,
+                },
+                false,
+            ));
+        }
+    };
+
+    // Create the SSE stream
+    let stream = async_stream::stream! {
+        // Send initial psubscribe event
+        let psubscribe_msg = PubSubMessage::PSubscribe { count };
+        yield Ok(Event::default().data(format_sse_message(&psubscribe_msg)));
+
+        // Stream messages
+        let mut message_stream = pubsub.on_message();
+        while let Some(msg) = message_stream.next().await {
+            if let Some(parsed) = parse_redis_message(&msg) {
+                let sse_data = format_sse_message(&parsed);
+                yield Ok(Event::default().data(sse_data));
+            }
+        }
+    };
+
+    Ok(Sse::new(stream).keep_alive(KeepAlive::default()))
+}
