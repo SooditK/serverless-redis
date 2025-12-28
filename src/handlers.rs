@@ -241,8 +241,8 @@ pub async fn get_subscribe(
     };
 
     // Subscribe to channels
-    let count = match subscribe_to_channels(&mut pubsub, &channel_list).await {
-        Ok(c) => c,
+    match subscribe_to_channels(&mut pubsub, &channel_list).await {
+        Ok(_) => {},
         Err(e) => {
             return Err(write_resp(
                 EnvResp {
@@ -259,9 +259,14 @@ pub async fn get_subscribe(
 
     // Create the SSE stream
     let stream = async_stream::stream! {
-        // Send initial subscribe event
-        let subscribe_msg = PubSubMessage::Subscribe { count };
-        yield Ok(Event::default().data(format_sse_message(&subscribe_msg)));
+        // Send initial subscribe events - one per channel with incrementing count
+        for (idx, channel) in channel_list.iter().enumerate() {
+            let subscribe_msg = PubSubMessage::Subscribe { 
+                channel: channel.clone(), 
+                count: idx + 1 
+            };
+            yield Ok(Event::default().data(format_sse_message(&subscribe_msg)));
+        }
 
         // Stream messages
         let mut message_stream = pubsub.on_message();
@@ -318,8 +323,8 @@ pub async fn get_psubscribe(
     };
 
     // Subscribe to patterns
-    let count = match psubscribe_to_patterns(&mut pubsub, &pattern_list).await {
-        Ok(c) => c,
+    match psubscribe_to_patterns(&mut pubsub, &pattern_list).await {
+        Ok(_) => {},
         Err(e) => {
             return Err(write_resp(
                 EnvResp {
@@ -336,9 +341,14 @@ pub async fn get_psubscribe(
 
     // Create the SSE stream
     let stream = async_stream::stream! {
-        // Send initial psubscribe event
-        let psubscribe_msg = PubSubMessage::PSubscribe { count };
-        yield Ok(Event::default().data(format_sse_message(&psubscribe_msg)));
+        // Send initial psubscribe events - one per pattern with incrementing count
+        for (idx, pattern) in pattern_list.iter().enumerate() {
+            let psubscribe_msg = PubSubMessage::PSubscribe { 
+                pattern: pattern.clone(), 
+                count: idx + 1 
+            };
+            yield Ok(Event::default().data(format_sse_message(&psubscribe_msg)));
+        }
 
         // Stream messages
         let mut message_stream = pubsub.on_message();

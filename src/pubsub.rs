@@ -34,10 +34,10 @@ pub async fn psubscribe_to_patterns(
 pub enum PubSubMessage {
     Message { channel: String, payload: String },
     PMessage { pattern: String, channel: String, payload: String },
-    Subscribe { count: usize },
-    Unsubscribe { count: usize },
-    PSubscribe { count: usize },
-    PUnsubscribe { count: usize },
+    Subscribe { channel: String, count: usize },
+    Unsubscribe { channel: String, count: usize },
+    PSubscribe { pattern: String, count: usize },
+    PUnsubscribe { pattern: String, count: usize },
 }
 
 /// Format a Pub/Sub message into SSE format
@@ -50,17 +50,17 @@ pub fn format_sse_message(msg: &PubSubMessage) -> String {
         PubSubMessage::PMessage { pattern, channel, payload } => {
             format!("pmessage,{},{},{}", pattern, channel, payload)
         }
-        PubSubMessage::Subscribe { count } => {
-            format!("subscribe,{}", count)
+        PubSubMessage::Subscribe { channel, count } => {
+            format!("subscribe,{},{}", channel, count)
         }
-        PubSubMessage::Unsubscribe { count } => {
-            format!("unsubscribe,{}", count)
+        PubSubMessage::Unsubscribe { channel, count } => {
+            format!("unsubscribe,{},{}", channel, count)
         }
-        PubSubMessage::PSubscribe { count } => {
-            format!("psubscribe,{}", count)
+        PubSubMessage::PSubscribe { pattern, count } => {
+            format!("psubscribe,{},{}", pattern, count)
         }
-        PubSubMessage::PUnsubscribe { count } => {
-            format!("punsubscribe,{}", count)
+        PubSubMessage::PUnsubscribe { pattern, count } => {
+            format!("punsubscribe,{},{}", pattern, count)
         }
     }
 }

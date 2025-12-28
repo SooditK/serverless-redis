@@ -28,6 +28,24 @@ Server runs on `http://localhost:3000`
 
 ### Manual Setup
 
+#### Option 1: Using .env file (recommended)
+
+Create a `.env` file in the project root:
+
+```bash
+REDIS_URL=redis://127.0.0.1:6379
+SR_TOKEN=your_token_here
+PORT=3000
+```
+
+Then run:
+
+```bash
+cargo run
+```
+
+#### Option 2: Using environment variables
+
 ```bash
 # Set environment variables
 export REDIS_URL=redis://127.0.0.1:6379
