@@ -4,7 +4,7 @@ use crate::utils::write_resp;
 use axum::{extract::State, http::HeaderMap, response::Response, Json};
 
 pub async fn post_root(
-    State(state): State<AppState>,
+    State(mut state): State<AppState>,
     headers: HeaderMap,
     Json(body): Json<serde_json::Value>,
 ) -> Response {
@@ -28,13 +28,14 @@ pub async fn post_root(
         );
     }
 
-    let mut cmd = Vec::with_capacity(arr.unwrap().len());
-    for v in arr.unwrap() {
+    let arr = arr.unwrap();
+    let mut cmd = Vec::with_capacity(arr.len());
+    for v in arr {
         let arg = match v {
             serde_json::Value::String(s) => s.clone(),
             serde_json::Value::Number(n) => n.to_string(),
             serde_json::Value::Bool(b) => b.to_string(),
-            serde_json::Value::Null => "".to_string(),
+            serde_json::Value::Null => String::new(),
             _ => {
                 return write_resp(
                     EnvResp {
@@ -53,8 +54,7 @@ pub async fn post_root(
         cmd.push(arg);
     }
 
-    let mut conn = state.conn.clone();
-    match do_call(&mut conn, cmd).await {
+    match do_call(&mut state.conn, cmd).await {
         Ok(v) => write_resp(
             EnvResp {
                 status: "ok".into(),
@@ -79,7 +79,7 @@ pub async fn post_root(
 }
 
 pub async fn post_pipeline(
-    State(state): State<AppState>,
+    State(mut state): State<AppState>,
     headers: HeaderMap,
     Json(body): Json<serde_json::Value>,
 ) -> Response {
@@ -103,8 +103,9 @@ pub async fn post_pipeline(
         );
     }
 
-    let mut cmds = Vec::with_capacity(outer.unwrap().len());
-    for item in outer.unwrap() {
+    let outer = outer.unwrap();
+    let mut cmds = Vec::with_capacity(outer.len());
+    for item in outer {
         let arr = item.as_array();
         if arr.is_none() {
             return write_resp(
@@ -120,13 +121,14 @@ pub async fn post_pipeline(
                 enc,
             );
         }
-        let mut cmd = Vec::with_capacity(arr.unwrap().len());
-        for v in arr.unwrap() {
+        let arr = arr.unwrap();
+        let mut cmd = Vec::with_capacity(arr.len());
+        for v in arr {
             let arg = match v {
                 serde_json::Value::String(s) => s.clone(),
                 serde_json::Value::Number(n) => n.to_string(),
                 serde_json::Value::Bool(b) => b.to_string(),
-                serde_json::Value::Null => "".to_string(),
+                serde_json::Value::Null => String::new(),
                 _ => {
                     return write_resp(
                         EnvResp {
@@ -148,8 +150,7 @@ pub async fn post_pipeline(
         cmds.push(cmd);
     }
 
-    let mut conn = state.conn.clone();
-    match execute_pipeline(&mut conn, cmds).await {
+    match execute_pipeline(&mut state.conn, cmds).await {
         Ok(results) => {
             let out: Vec<serde_json::Value> = results
                 .into_iter()
@@ -207,7 +208,7 @@ pub async fn get_subscribe(
     let channel_list: Vec<String> = channels
         .split('/')
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+        .map(String::from)
         .collect();
 
     if channel_list.is_empty() {
@@ -289,7 +290,7 @@ pub async fn get_psubscribe(
     let pattern_list: Vec<String> = patterns
         .split('/')
         .filter(|s| !s.is_empty())
-        .map(|s| s.to_string())
+        .map(String::from)
         .collect();
 
     if pattern_list.is_empty() {

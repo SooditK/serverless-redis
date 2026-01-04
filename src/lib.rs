@@ -31,7 +31,7 @@ impl<B> ValidateRequest<B> for BearerTokenValidator {
             Some(header_value) => {
                 if let Ok(auth_str) = header_value.to_str() {
                     if let Some(token) = auth_str.strip_prefix("Bearer ") {
-                        if token == self.token {
+                        if constant_time_eq(token.as_bytes(), self.token.as_bytes()) {
                             return Ok(());
                         }
                     }
@@ -41,6 +41,18 @@ impl<B> ValidateRequest<B> for BearerTokenValidator {
             None => Err(StatusCode::UNAUTHORIZED.into_response()),
         }
     }
+}
+
+/// Constant-time comparison of two byte slices to prevent timing attacks
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    a.iter()
+        .zip(b.iter())
+        .map(|(x, y)| x ^ y)
+        .fold(0u8, |acc, diff| acc | diff)
+        == 0
 }
 
 pub fn create_app(state: AppState, token: String) -> Router {
