@@ -69,17 +69,22 @@ pub fn format_sse_message(msg: &PubSubMessage) -> String {
 pub fn payload_to_json_string(payload: &[u8]) -> String {
     match std::str::from_utf8(payload) {
         Ok(s) => {
-            // Try to parse as JSON to see if it's already JSON
-            if serde_json::from_str::<serde_json::Value>(s).is_ok() {
-                s.to_string()
-            } else {
-                // If not JSON, wrap it as a JSON string
-                serde_json::to_string(s).unwrap_or_else(|_| format!("\"{}\"", s))
+            // Attempt to parse as JSON first - this validates it's actually valid JSON
+            // If parsing succeeds, return the original string (it's already valid JSON)
+            // This preserves JSON objects/arrays without double-wrapping them
+            match serde_json::from_str::<serde_json::Value>(s) {
+                Ok(_) => s.to_string(),
+                Err(_) => {
+                    // Not valid JSON, wrap it as a JSON string
+                    serde_json::to_string(s).unwrap_or_else(|_| format!("\"{}\"", s))
+                }
             }
         }
         Err(_) => {
             // If not valid UTF-8, encode as base64 and wrap as JSON string
-            let encoded = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, payload);
+            use base64::engine::general_purpose::STANDARD;
+            use base64::Engine;
+            let encoded = STANDARD.encode(payload);
             serde_json::to_string(&encoded).unwrap_or_else(|_| format!("\"{}\"", encoded))
         }
     }

@@ -5,10 +5,12 @@ use tokio::time::timeout;
 fn redis_to_json(v: Value) -> serde_json::Value {
     match v {
         Value::Nil => serde_json::Value::Null,
-        Value::Int(i) => serde_json::Value::Number(i.into()),
-        Value::BulkString(bs) => match String::from_utf8(bs) {
-            Ok(s) => serde_json::Value::String(s),
-            Err(e) => serde_json::Value::String(String::from_utf8_lossy(e.as_bytes()).to_string()),
+        Value::Int(i) => serde_json::Value::String(i.to_string()),
+        Value::BulkString(bs) => {
+            match std::str::from_utf8(&bs) {
+                Ok(s) => serde_json::Value::String(s.to_string()),
+                Err(_) => serde_json::Value::String(String::from_utf8_lossy(&bs).to_string()),
+            }
         },
         Value::SimpleString(s) => serde_json::Value::String(s),
         Value::Array(arr) => serde_json::Value::Array(arr.into_iter().map(redis_to_json).collect()),

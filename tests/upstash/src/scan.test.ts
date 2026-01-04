@@ -9,9 +9,23 @@ describe("Advanced Features", () => {
     await redis.set("scan:key2", "value2");
     await redis.set("scan:key3", "value3");
 
-    const result = await redis.scan(0, { match: "scan:*", count: 10 });
-    expect(result[0]).toBe("0"); // Cursor
-    expect(result[1].length).toBeGreaterThanOrEqual(3);
+    // SCAN can return non-zero cursor even when all keys are returned
+    // Continue scanning until cursor is "0" to get all keys
+    let cursor = 0;
+    const allKeys: string[] = [];
+
+    do {
+      const result = await redis.scan(cursor, { match: "scan:*", count: 10 });
+      cursor = parseInt(result[0] as string, 10);
+      const keys = result[1] as string[];
+      allKeys.push(...keys);
+    } while (cursor !== 0);
+
+    // Verify we got all expected keys
+    expect(allKeys.length).toBeGreaterThanOrEqual(3);
+    expect(allKeys).toContain("scan:key1");
+    expect(allKeys).toContain("scan:key2");
+    expect(allKeys).toContain("scan:key3");
   });
 
   it("should scan hash fields", async () => {
