@@ -35,6 +35,19 @@ describe("Key Operations", () => {
     expect(pttl).toBeLessThanOrEqual(10000);
   });
 
+  it("should set expiration at specific timestamp in milliseconds", async () => {
+    const key = "pexpireatkey";
+    await redis.set(key, "value");
+
+    // Set expiration to 10 minutes from now
+    const TenMinutesFromNow = Date.now() + 10 * 60 * 1000;
+    await redis.pexpireat(key, TenMinutesFromNow);
+
+    const pttl = await redis.pttl(key);
+    expect(pttl).toBeGreaterThan(9 * 60 * 1000); // At least 9 minutes remaining
+    expect(pttl).toBeLessThanOrEqual(10 * 60 * 1000); // At most 10 minutes
+  });
+
   it("should persist key", async () => {
     await redis.set("persistkey", "value", { ex: 10 });
     const persisted = await redis.persist("persistkey");
