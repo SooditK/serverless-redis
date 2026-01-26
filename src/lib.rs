@@ -79,9 +79,9 @@ pub fn create_app(state: AppState, token: String) -> Router {
         )
         .route("/pipeline", post(post_pipeline))
         .route("/multi-exec", post(post_multi_exec))
-        .route("/subscribe/*channels", get(get_subscribe).post(get_subscribe))
+        .route("/subscribe/{*channels}", get(get_subscribe).post(get_subscribe))
         .route(
-            "/psubscribe/*patterns",
+            "/psubscribe/{*patterns}",
             get(get_psubscribe).post(get_psubscribe),
         )
         .with_state(state)

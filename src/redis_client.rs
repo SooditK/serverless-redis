@@ -39,6 +39,7 @@ fn redis_to_json(v: Value) -> serde_json::Value {
         Value::Attribute { data, .. } => redis_to_json(*data),
         Value::VerbatimString { format: _, text } => serde_json::Value::String(text),
         Value::ServerError(e) => serde_json::json!({"error": format!("{:?}", e)}),
+        _ => serde_json::Value::Null,
     }
 }
 

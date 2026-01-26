@@ -4,9 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-axum = { version = "0.7", default-features = false, features = ["json", "http1", "tokio", "macros"] }
+axum = { version = "0.8.8", default-features = false, features = ["json", "http1", "tokio", "macros"] }
 tokio = { version = "1", default-features = false, features = ["rt", "macros", "net", "time"] }
-redis = { version = "0.27", features = ["tokio-comp", "connection-manager"] }
+redis = { version = "1.0.2", features = ["tokio-comp", "connection-manager"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"
@@ -19,4 +19,4 @@ dotenvy = "0.15"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
-axum = { version = "0.7", default-features = false, features = ["json", "http1", "tokio", "macros"] }
+axum = { version = "0.8.8", default-features = false, features = ["json", "http1", "tokio", "macros"] }
